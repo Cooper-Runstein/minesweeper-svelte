@@ -52,7 +52,7 @@
 	const cellDisplayTypeClassMap = {
 		count: (count: number) => `cell-count cell-${count}`,
 		mine: 'iconoir-emoji-sad cell-loss',
-		flag: 'iconoir-triangle-flag flag',
+		flag: 'iconoir-triangle-flag cell-flag',
 		// this one is a little special, so we'll treat it differently
 		zero: 'cell-zero'
 	};
@@ -97,6 +97,7 @@
 </svelte:head>
 
 <div>
+	<div class="header">MineSweeper</div>
 	{#if gameState === 'lost'}
 		<div class="game-over-container lost">
 			<div>Sorry, you lost!</div>
@@ -121,11 +122,13 @@
 							on:contextmenu={handleFlagClick([rowIdx, colIdx])}
 							on:click={handleClick([rowIdx, colIdx])}
 						>
-							{#if getCellUIConfig(cell)?.class}
-								<div class={`${getCellUIConfig(cell)?.class} cell-contents`}>
-									{getCellUIConfig(cell)?.content || ''}
-								</div>
-							{/if}
+							<div class={`cell-content-wrapper ${getCellUIConfig(cell)?.class}`}>
+								{#if getCellUIConfig(cell)?.class}
+									<div>
+										{getCellUIConfig(cell)?.content || ''}
+									</div>
+								{/if}
+							</div>
 						</div>
 					{/each}
 				</div>
@@ -135,34 +138,9 @@
 </div>
 
 <style>
-	.boardWrapper {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-	}
-
-	.game-over-container {
-		border-radius: 4px;
-		padding: 8px;
-
-		font-size: 22px;
-		font-weight: 700;
-		margin-bottom: 16px;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		grid-gap: 8px;
-	}
-
-	.lost {
-		border: 4px solid red;
-		color: red;
-	}
-
-	.won {
-		border: 4px solid green;
-		color: green;
+	* {
+		box-sizing: border-box;
+		margin: 0;
 	}
 
 	button {
@@ -177,9 +155,42 @@
 		border-color: orangered;
 	}
 
-	* {
-		box-sizing: border-box;
-		margin: 0;
+	.header {
+		font-size: 22px;
+		font-weight: 800;
+		padding: 20px;
+		text-align: center;
+	}
+
+	/* GAME END DISPLAYS */
+
+	.game-over-container {
+		align-items: center;
+		border-radius: 4px;
+		display: flex;
+		flex-direction: column;
+		font-size: 22px;
+		font-weight: 700;
+		grid-gap: 8px;
+		margin-bottom: 16px;
+		padding: 8px;
+	}
+
+	.lost {
+		border: 4px solid red;
+		color: red;
+	}
+
+	.won {
+		border: 4px solid green;
+		color: green;
+	}
+
+	.boardWrapper {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
 	}
 
 	.row {
@@ -188,17 +199,23 @@
 
 	.cell {
 		border: 1px solid black;
-		width: 20px;
-		height: 20px;
+		width: 4em;
+		height: 4em;
+		font-weight: 800;
 	}
 
-	.cell-zero {
-		background-color: beige;
+	.cell-content-wrapper {
+		align-items: center;
+		display: flex;
 		height: 100%;
+		justify-content: center;
 		width: 100%;
 	}
 
-	.cell-contents {
+	/* CELL TYPES */
+
+	.cell-zero {
+		background-color: beige;
 		height: 100%;
 		width: 100%;
 	}
@@ -228,7 +245,7 @@
 		width: 100%;
 	}
 
-	.flag {
+	.cell-flag {
 		background-color: lightcyan;
 		height: 100%;
 		width: 100%;
