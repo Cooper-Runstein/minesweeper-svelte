@@ -7,6 +7,7 @@ import {
 	getNeighbors,
 	getSectionCells,
 	getZeroSectionRectifications,
+	validateWin,
 	type Board
 } from './utils';
 
@@ -228,5 +229,37 @@ describe('zero count sections', () => {
 			expect(resCoords).toContainEqual({ row: 0, col: 0 });
 			expect(resCoords).toContainEqual({ row: 1, col: 1 });
 		});
+	});
+});
+
+describe('validateWin', () => {
+	const board: Board = [
+		[
+			makeCell({ coords: { row: 0, col: 0 } }),
+			makeCell({ coords: { row: 0, col: 1 } }),
+			makeCell({ coords: { row: 0, col: 3 }, flag: true, mine: true })
+		],
+		[
+			makeCell({ coords: { row: 1, col: 0 } }),
+			makeCell({ coords: { row: 1, col: 1 } }),
+			makeCell({ coords: { row: 1, col: 3 } })
+		],
+		[
+			makeCell({ coords: { row: 2, col: 0 } }),
+			makeCell({ coords: { row: 2, col: 1 } }),
+			makeCell({ coords: { row: 2, col: 3 } })
+		]
+	];
+
+	it('validates a board that has been won', () => {
+		board.forEach((r, rI) =>
+			r.forEach((c, cI) => {
+				if (!(c.coords.row === 0 && c.coords.col === 3)) {
+					board[rI][cI].clicked = true;
+				}
+			})
+		);
+
+		expect(validateWin(board)).toBe(true);
 	});
 });

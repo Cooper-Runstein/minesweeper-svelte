@@ -1,5 +1,7 @@
 import produce from 'immer';
 
+import { filter, flatMap, isNull, map, pipe, negate } from 'lodash/fp';
+
 export type Coords = { row: number; col: number };
 
 export type Cell = {
@@ -81,7 +83,7 @@ type HandlerOptions = { coords: Coords; board: Board };
 type CellHandler = (cell: Cell, opts: HandlerOptions) => Cell;
 
 /** Apply a function to each cell, returning a new board with each cell modified  */
-export const forEachCell = (board: Cell[][]) => (handler: CellHandler) => {
+export const forEachCell = (handler: CellHandler) => (board: Board) => {
 	return produce(board, (draft) => {
 		for (let rowIdx = 0; rowIdx < board.length; rowIdx++) {
 			for (let colIdx = 0; colIdx < board.length; colIdx++) {
@@ -188,19 +190,13 @@ const makeCellWithPotentialMine = (_: Cell, { coords }: HandlerOptions) =>
 
 const stringifyCoords = (coords: Coords) => `${coords.row}-${coords.col}`;
 
-export function setUpBoard(size: number) {
-	const emptyBoard = generateBoardStructure(size);
-
-	// We need to pretend emptyBoard is a real board to appease TS
-	const boardWithMines: Board = forEachCell(emptyBoard as unknown as Board)(
-		makeCellWithPotentialMine
-	);
-
-	const boardWithCounts = forEachCell(boardWithMines)(countNeighborMines);
-
-	const board = calculateZeroCountSections(boardWithCounts);
-
-	return board;
+export function setUpBoard(size: number): Board {
+	return pipe(
+		generateBoardStructure,
+		forEachCell(makeCellWithPotentialMine),
+		forEachCell(countNeighborMines),
+		calculateZeroCountSections
+	)(size);
 }
 
 export function validateWin(board: Cell[][]) {
@@ -215,29 +211,26 @@ export function validateWin(board: Cell[][]) {
 	return true;
 }
 
-export const getSectionCells = (board: Cell[][]) => (section: number) => {
-	const sectionCells = [];
-	for (let rowIdx = 0; rowIdx < board.length; rowIdx++) {
-		for (let colIdx = 0; colIdx < board.length; colIdx++) {
-			const cell = board[rowIdx][colIdx];
-			if (cell.zeroCountSection === section) {
-				sectionCells.push(cell);
-			}
-		}
-	}
-
-	return sectionCells;
-};
+export const getSectionCells =
+	(board: Cell[][]) =>
+	(section: number): Cell[] =>
+		pipe(
+			flatMap(map((cell: Cell) => (cell.zeroCountSection === section ? cell : null))),
+			filter(negate(isNull))
+		)(board);
 
 export const handleClickZeroSection = (board: Cell[][]) => (section: number) => {
 	return produce(board, (draft) => {
-		const sectionCells = getSectionCells(board)(section);
+		getSectionCells(board)(section).forEach((cellInSection) => {
+			getNeighbors(board)([cellInSection.coords.row, cellInSection.coords.col]).forEach(
+				(neighbor) => {
+					const {
+						coords: { row, col }
+					} = neighbor;
 
-		for (let i = 0; i < sectionCells.length; i++) {
-			const cell = sectionCells[i];
-			const neighbors = getNeighbors(board)([cell.coords.row, cell.coords.col]);
-
-			neighbors.forEach((n) => (draft[n.coords.row][n.coords.col].clicked = true));
-		}
+					draft[row][col].clicked = true;
+				}
+			);
+		});
 	});
 };
